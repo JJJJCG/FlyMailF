@@ -8,12 +8,14 @@ from services.notify.channels.base import NotifyChannel
 from services.notify.channels.bark import BarkChannel
 from services.notify.channels.telegram import TelegramChannel
 from services.notify.channels.webhook import WebhookChannel
+from services.notify.channels.wechat import WechatChannel
 
 # 渠道名 -> 实例
 _REGISTRY: Dict[str, NotifyChannel] = {
     "bark": BarkChannel(),
     "telegram": TelegramChannel(),
     "webhook": WebhookChannel(),
+    "wechat": WechatChannel(),
 }
 
 

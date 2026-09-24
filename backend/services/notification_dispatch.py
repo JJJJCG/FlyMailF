@@ -7,6 +7,7 @@
 - HTTP 发送在后台任务中执行，避免阻塞 IDLE/同步
 - 图片模式：Telegram / Webhook 直传 PNG；需公网 URL 的渠道（如 Bark）经全局自建图床上传
 - 多渠道图片模式只渲染一次卡片 PNG，再按需上传图床或直传
+- 微信渠道（自建 HTTP 网关）只有文字通道，任何模式下都发文字
 """
 from __future__ import annotations
 
@@ -119,11 +120,13 @@ async def _dispatch_impl(event: Dict[str, Any]) -> None:
     bark_cfg = settings.get("bark") or {}
     tg_cfg = settings.get("telegram") or {}
     wh_cfg = settings.get("webhook") or {}
+    wc_cfg = settings.get("wechat") or {}
     imgbed_cfg = settings.get("imgbed") or {}
     bark_on = bool(bark_cfg.get("enabled"))
     tg_on = bool(tg_cfg.get("enabled"))
     wh_on = bool(wh_cfg.get("enabled"))
-    if not bark_on and not tg_on and not wh_on:
+    wc_on = bool(wc_cfg.get("enabled"))
+    if not bark_on and not tg_on and not wh_on and not wc_on:
         return
 
     need_image = mode == "image"
@@ -201,6 +204,13 @@ async def _dispatch_impl(event: Dict[str, Any]) -> None:
             if text_message is not None:
                 await _send_one("webhook", text_message, wh_cfg, user_uid)
 
+    if wc_on:
+        # 微信推送服务只有 text 字段：文字/图片模式都发文字，不做图片渲染，也不静默丢通知
+        if text_message is not None:
+            await _send_one("wechat", text_message, wc_cfg, user_uid)
+        else:
+            logger.warning("微信推送跳过：文字渲染失败 user_uid=%s", user_uid)
+
 
 async def _send_one(
     channel_name: str,
@@ -226,6 +236,7 @@ async def send_test(user_uid: str, channel_name: str) -> Dict[str, Any]:
     - 文字 / 图片跟随用户当前全局模式
     - 需公网 URL 的渠道（如 Bark）图片模式依赖全局自建图床
     - Telegram / Webhook 图片模式直传 PNG，无需图床
+    - 微信渠道只有文字，任何模式下都发文字
     """
     settings = await load_ext_notify_settings(user_uid)
     channel_name = (channel_name or "").strip().lower()
@@ -239,6 +250,8 @@ async def send_test(user_uid: str, channel_name: str) -> Dict[str, Any]:
         config = settings.get("telegram") or {}
     elif channel_name == "webhook":
         config = settings.get("webhook") or {}
+    elif channel_name == "wechat":
+        config = settings.get("wechat") or {}
     else:
         config = {}
 
@@ -262,7 +275,10 @@ async def send_test(user_uid: str, channel_name: str) -> Dict[str, Any]:
 
     try:
         await channel.send(message, config, user_uid=user_uid)
-        label = "图片" if mode == "image" else "文字"
+        if mode == "image" and channel_name == "wechat":
+            label = "文字（该渠道不支持图片）"
+        else:
+            label = "图片" if mode == "image" else "文字"
         return {"success": True, "message": f"{channel_name} 测试发送成功（{label}模式）"}
     except Exception as e:
         return {"success": False, "message": str(e) or "发送失败"}

@@ -11,6 +11,8 @@ from services.notify.imgbed.settings import (
     KEY_IMGBED,
     normalize_imgbed,
 )
+from services.notify.channels.wechat import DEFAULT_SERVER as DEFAULT_WECHAT_SERVER
+from services.notify.channels.wechat import normalize_wechat_config
 
 # 配置 key（与应用内铃铛无关）
 KEY_ENABLED = "ext_notify_enabled"
@@ -20,6 +22,7 @@ KEY_MODE = "ext_notify_mode"
 KEY_BARK = "ext_notify_bark"
 KEY_TELEGRAM = "ext_notify_telegram"
 KEY_WEBHOOK = "ext_notify_webhook"
+KEY_WECHAT = "ext_notify_wechat"
 
 DEFAULT_BARK: Dict[str, Any] = {
     "enabled": False,
@@ -42,16 +45,25 @@ DEFAULT_WEBHOOK: Dict[str, Any] = {
     "use_gmail_proxy": False,
 }
 
+# 微信推送：自建 HTTP 网关（POST /v1/wechat，Bearer Token）
+DEFAULT_WECHAT: Dict[str, Any] = {
+    "enabled": False,
+    "server": DEFAULT_WECHAT_SERVER,
+    "token": "",
+}
+
 DEFAULT_SETTINGS: Dict[str, Any] = {
     "enabled": False,
     "dnd_start": "21:00",
     "dnd_end": "07:00",
     # text | image
     # image：Telegram/企微直传；Bark/钉钉/飞书需图床；通用 Webhook Base64
+    # 微信渠道只有文字通道，图片模式下自动降级为文字
     "mode": "text",
     "bark": dict(DEFAULT_BARK),
     "telegram": dict(DEFAULT_TELEGRAM),
     "webhook": dict(DEFAULT_WEBHOOK),
+    "wechat": dict(DEFAULT_WECHAT),
     "imgbed": dict(DEFAULT_IMGBED),
     "imgbed_deploy_url": DEFAULT_DEPLOY_URL,
 }
@@ -91,6 +103,21 @@ def _norm_webhook(raw: Any) -> Dict[str, Any]:
     }
 
 
+def _norm_wechat(raw: Any) -> Dict[str, Any]:
+    """规范化微信推送配置。
+
+    复用渠道内的地址规范化（补协议 / 去 /v1/wechat 后缀 / 从 query 取 token），
+    保证「界面保存的」与「实际请求使用的」完全一致。
+    """
+    raw = raw if isinstance(raw, dict) else {}
+    server, token = normalize_wechat_config(raw)
+    return {
+        "enabled": bool(raw.get("enabled", False)),
+        "server": server or DEFAULT_WECHAT_SERVER,
+        "token": token,
+    }
+
+
 def _norm_mode(mode: Any) -> str:
     m = str(mode or "text").strip().lower()
     return m if m in ("text", "image") else "text"
@@ -121,6 +148,7 @@ async def load_ext_notify_settings(user_uid: str) -> Dict[str, Any]:
             KEY_BARK,
             KEY_TELEGRAM,
             KEY_WEBHOOK,
+            KEY_WECHAT,
             KEY_IMGBED,
         ],
     )
@@ -132,6 +160,7 @@ async def load_ext_notify_settings(user_uid: str) -> Dict[str, Any]:
         "bark": _norm_bark(raw.get(KEY_BARK)),
         "telegram": _norm_telegram(raw.get(KEY_TELEGRAM)),
         "webhook": _norm_webhook(raw.get(KEY_WEBHOOK)),
+        "wechat": _norm_wechat(raw.get(KEY_WECHAT)),
         "imgbed": normalize_imgbed(raw.get(KEY_IMGBED)),
         "imgbed_deploy_url": DEFAULT_DEPLOY_URL,
     }
@@ -143,6 +172,7 @@ async def save_ext_notify_settings(user_uid: str, data: Dict[str, Any]) -> Dict[
     bark = _norm_bark(data.get("bark"))
     telegram = _norm_telegram(data.get("telegram"))
     webhook = _norm_webhook(data.get("webhook"))
+    wechat = _norm_wechat(data.get("wechat"))
     imgbed = normalize_imgbed(data.get("imgbed"))
 
     settings = {
@@ -153,6 +183,7 @@ async def save_ext_notify_settings(user_uid: str, data: Dict[str, Any]) -> Dict[
         KEY_BARK: bark,
         KEY_TELEGRAM: telegram,
         KEY_WEBHOOK: webhook,
+        KEY_WECHAT: wechat,
         KEY_IMGBED: imgbed,
     }
     await set_user_settings(user_uid, settings)
@@ -164,6 +195,7 @@ async def save_ext_notify_settings(user_uid: str, data: Dict[str, Any]) -> Dict[
         "bark": bark,
         "telegram": telegram,
         "webhook": webhook,
+        "wechat": wechat,
         "imgbed": imgbed,
         "imgbed_deploy_url": DEFAULT_DEPLOY_URL,
     }

@@ -40,13 +40,14 @@ async def put_notify_settings(request: Request, body: dict = Body(...)):
     body = body or {}
     saved = await save_ext_notify_settings(uid, body)
     logger.info(
-        "已保存第三方通知设置 user_uid=%s enabled=%s mode=%s bark=%s telegram=%s webhook=%s imgbed=%s",
+        "已保存第三方通知设置 user_uid=%s enabled=%s mode=%s bark=%s telegram=%s webhook=%s wechat=%s imgbed=%s",
         uid,
         saved.get("enabled"),
         saved.get("mode"),
         bool((saved.get("bark") or {}).get("enabled")),
         bool((saved.get("telegram") or {}).get("enabled")),
         bool((saved.get("webhook") or {}).get("enabled")),
+        bool((saved.get("wechat") or {}).get("enabled")),
         bool((saved.get("imgbed") or {}).get("base_url")),
     )
     return {"success": True, "message": "通知设置已保存", "data": saved}

@@ -253,7 +253,7 @@
   </div>
   <div class="gmail-toggle-text">
   <span class="gmail-toggle-title">通知设置</span>
-  <span class="gmail-toggle-desc">推送到 Bark、Telegram、Webhook 等</span>
+  <span class="gmail-toggle-desc">推送到 Bark、Telegram、微信、Webhook 等</span>
   </div>
   </div>
   <svg class="guide-arrow" :class="{ open: notifyOpen }" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -434,6 +434,19 @@
   <path d="M475.854144 913.399911c-83.761992 116.529989-247.395976 145.763986-365.666965 64.715993-117.655989-81.099992-145.252986-242.480976-62.564994-360.137964a264.700974 264.700974 0 0 1 205.51498-111.460989l2.918 80.484992a182.679982 182.679982 0 0 0-135.422987 76.491992c-57.445994 81.049992-39.679996 190.154981 39.064996 244.733976 79.154992 54.015995 189.949981 33.279997 247.344976-47.205995a186.468982 186.468982 0 0 0 32.204997-81.048992v-56.881995l320.252969-2.303999 3.941999-6.144a109.566989 109.566989 0 0 1 148.069986-40.498996 105.82999 105.82999 0 0 1 39.063996 146.276986 110.385989 110.385989 0 0 1-148.631985 39.935996 99.68499 99.68499 0 0 1-47.614996-57.496994l-233.572977 1.176999A278.269973 278.269973 0 0 1 475.854144 913.399911z m417.787959-401.659961c145.252986 17.406998 248.522976 145.149986 230.756977 285.231972-17.766998 140.644986-149.809985 240.124977-294.959971 222.717978a266.083974 266.083974 0 0 1-196.862981-124.261987l71.115993-40.446996a185.546982 185.546982 0 0 0 133.118987 81.611992c100.45299 11.775999 189.335982-55.141995 201.367981-148.989986 12.082999-94.053991-59.032994-180.017982-158.359985-191.844981a199.677981 199.677981 0 0 0-87.807991 10.085999l-48.639996 24.575997-148.119985-268.285973h-12.645999c-60.107994-1.69-107.569989-50.789995-106.18699-109.71999 1.74-58.469994 53.349995-104.08899 113.662989-101.78499 60.260994 3.328 108.029989 51.199995 106.23899 109.71999a104.03699 104.03699 0 0 1-26.419997 64.665993l109.003989 197.373981a278.524973 278.524973 0 0 1 114.686989-10.649999zM348.931156 358.651965A255.126975 255.126975 0 0 1 484.968143 20.119998c133.220987-55.140995 287.023972 7.321999 344.469966 139.519986a254.205975 254.205975 0 0 1-11.467999 228.911978l-71.218993-40.447996c24.063998-45.566996 28.056997-101.21999 5.12-153.597985-39.064996-90.008991-142.948986-133.374987-231.933978-96.766991-89.598991 37.119996-129.739987 140.644986-90.622991 230.653978 15.973998 37.119996 43.007996 65.790994 75.774993 84.939992l22.322997 11.775998-176.125982 280.777973c1.74 2.867 3.942 6.143999 5.733999 10.649999 28.057997 51.249995 8.652999 115.914989-44.235996 143.408986-52.274995 27.544997-118.269988 7.372999-146.942985-45.515996a105.87999 105.87999 0 0 1 44.236995-144.536985 102.91099 102.91099 0 0 1 70.654994-9.522999L413.34015 448.302956a248.829976 248.829976 0 0 1-64.409994-89.599991z" fill="#6366F1"/>
   </svg>
   <span class="tab-label">Webhook</span>
+  </button>
+  <button
+  type="button"
+  class="guide-tab"
+  :class="{ active: notifyChannelTab === 'wechat' }"
+  @click="notifyChannelTab = 'wechat'"
+  >
+  <svg viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" width="16" height="16">
+  <rect x="1" y="1" width="22" height="22" rx="6" fill="#07C160"/>
+  <path d="M6.5 8h8A1.5 1.5 0 0 1 16 9.5v4a1.5 1.5 0 0 1-1.5 1.5H11l-3.2 2.6V15H6.5A1.5 1.5 0 0 1 5 13.5v-4A1.5 1.5 0 0 1 6.5 8z" fill="#FFFFFF"/>
+  <circle cx="17.6" cy="7.2" r="2.6" fill="#FFFFFF"/>
+  </svg>
+  <span class="tab-label">微信</span>
   </button>
   </div>
 
@@ -648,6 +661,70 @@
   </button>
   <transition name="fade">
   <span v-if="notifyTestMsg && notifyTestingChannel === 'webhook'" class="status-msg" :class="notifyTestOk ? 'success' : 'error'">
+  {{ notifyTestMsg }}
+  </span>
+  </transition>
+  </div>
+  </div>
+
+  <!-- 微信（自建 HTTP 推送服务） -->
+  <div v-if="notifyChannelTab === 'wechat'" class="guide-panel">
+  <div class="field proxy-field">
+  <label class="field-label proxy-label">
+  <label class="toggle-switch">
+  <input type="checkbox" v-model="notifyForm.wechat.enabled" :disabled="!notifyForm.enabled" />
+  <span class="toggle-slider"></span>
+  </label>
+  <span>启用微信推送</span>
+  </label>
+  </div>
+  <div class="notify-inline-row" :class="{ 'notify-dim': !notifyForm.wechat.enabled || !notifyForm.enabled }">
+  <div class="field notify-inline-field">
+  <label class="field-label">服务地址</label>
+  <input
+  class="input"
+  type="text"
+  v-model="notifyForm.wechat.server"
+  placeholder="http://127.0.0.1:9901"
+  :disabled="!notifyForm.enabled || !notifyForm.wechat.enabled"
+  />
+  <span class="field-hint">默认 127.0.0.1:9901（与飞牛同机）；粘贴完整接口地址会自动识别</span>
+  <span class="field-hint">该渠道仅支持文字，图片模式下自动降级为文字发送</span>
+  </div>
+  <div class="field notify-inline-field">
+  <label class="field-label">Token</label>
+  <div class="notify-secret-row notify-secret-row-full">
+  <input
+  class="input"
+  :type="notifyWechatTokenVisible ? 'text' : 'password'"
+  v-model="notifyForm.wechat.token"
+  placeholder="推送服务配置的访问 Token"
+  :disabled="!notifyForm.enabled || !notifyForm.wechat.enabled"
+  autocomplete="off"
+  />
+  <button type="button" class="btn-secret-toggle" @click="notifyWechatTokenVisible = !notifyWechatTokenVisible" :title="notifyWechatTokenVisible ? '隐藏' : '显示'">
+  <svg v-if="!notifyWechatTokenVisible" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+  <svg v-else width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+  </button>
+  </div>
+  <span class="field-hint">以 Authorization: Bearer 请求头发送</span>
+  </div>
+  </div>
+  <div class="notify-test-row">
+  <button
+  type="button"
+  class="check-proxy-btn"
+  :disabled="notifyTesting || !notifyForm.wechat.server.trim() || !notifyForm.wechat.token.trim()"
+  @click="testNotifyChannel('wechat')"
+  >
+  <svg v-if="!notifyTesting || notifyTestingChannel !== 'wechat'" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+  <path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/>
+  </svg>
+  <svg v-else class="spin-icon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 11-6.219-8.56"/></svg>
+  <span>{{ notifyTesting && notifyTestingChannel === 'wechat' ? '测试中' : '发送测试' }}</span>
+  </button>
+  <transition name="fade">
+  <span v-if="notifyTestMsg && notifyTestingChannel === 'wechat'" class="status-msg" :class="notifyTestOk ? 'success' : 'error'">
   {{ notifyTestMsg }}
   </span>
   </transition>
@@ -1067,10 +1144,11 @@ async function saveSettings() {
 // ==================== 第三方通知设置 ====================
 
 const notifyOpen = ref(false);
-const notifyChannelTab = ref<'bark' | 'telegram' | 'webhook'>('bark');
+const notifyChannelTab = ref<'bark' | 'telegram' | 'webhook' | 'wechat'>('bark');
 const notifyBarkKeyVisible = ref(false);
 const notifyTgTokenVisible = ref(false);
 const notifyWhSecretVisible = ref(false);
+const notifyWechatTokenVisible = ref(false);
 const notifyImgbedTokenVisible = ref(false);
 const notifyImgbedBusy = ref(false);
 const notifyImgbedAction = ref('');
@@ -1109,6 +1187,11 @@ const notifyForm = ref({
     secret: '',
     use_gmail_proxy: false,
   },
+  wechat: {
+    enabled: false,
+    server: 'http://127.0.0.1:9901',
+    token: '',
+  },
   imgbed: {
     base_url: '',
     upload_token: '',
@@ -1146,6 +1229,11 @@ async function loadNotifySettings() {
         secret: (data.webhook && data.webhook.secret) || '',
         use_gmail_proxy: !!(data.webhook && data.webhook.use_gmail_proxy),
       },
+      wechat: {
+        enabled: !!(data.wechat && data.wechat.enabled),
+        server: (data.wechat && data.wechat.server) || 'http://127.0.0.1:9901',
+        token: (data.wechat && data.wechat.token) || '',
+      },
       imgbed: {
         base_url: (data.imgbed && data.imgbed.base_url) || '',
         upload_token: (data.imgbed && data.imgbed.upload_token) || '',
@@ -1171,6 +1259,7 @@ async function saveNotifySettings() {
       bark: { ...notifyForm.value.bark },
       telegram: { ...notifyForm.value.telegram },
       webhook: { ...notifyForm.value.webhook },
+      wechat: { ...notifyForm.value.wechat },
       imgbed: { ...notifyForm.value.imgbed },
     }) as any;
     if (res && res.success === false) {
@@ -1190,7 +1279,7 @@ async function saveNotifySettings() {
 }
 
 /** 测试指定渠道（绕过总开关与免打扰） */
-async function testNotifyChannel(channel: 'bark' | 'telegram' | 'webhook') {
+async function testNotifyChannel(channel: 'bark' | 'telegram' | 'webhook' | 'wechat') {
   if (notifyTesting.value) return;
   notifyTesting.value = true;
   notifyTestingChannel.value = channel;
@@ -1206,6 +1295,7 @@ async function testNotifyChannel(channel: 'bark' | 'telegram' | 'webhook') {
       bark: { ...notifyForm.value.bark },
       telegram: { ...notifyForm.value.telegram },
       webhook: { ...notifyForm.value.webhook },
+      wechat: { ...notifyForm.value.wechat },
       imgbed: { ...notifyForm.value.imgbed },
     });
     // 图片模式需生成卡片 + 图床上传，超时放宽
@@ -1256,6 +1346,7 @@ async function testImgbed() {
           bark: { ...notifyForm.value.bark },
           telegram: { ...notifyForm.value.telegram },
           webhook: { ...notifyForm.value.webhook },
+          wechat: { ...notifyForm.value.wechat },
           imgbed: { ...notifyForm.value.imgbed },
         });
       } catch {
